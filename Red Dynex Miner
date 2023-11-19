@@ -1,0 +1,150 @@
+import random
+import json
+from stratum import StratumConnection
+import logging
+import requests
+
+# Configure logging to both console and file
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filename='mining.log')
+console_logger = logging.StreamHandler()
+console_logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+console_logger.setFormatter(formatter)
+logger = logging.getLogger(__name__)
+logger.addHandler(console_logger)
+
+class MiningStatistics:
+    def __init__(self):
+        self.shares_found = 0
+        self.shares_submitted = 0
+        self.mining_start_time = time.time()
+
+    def update_shares_found(self):
+        self.shares_found += 1
+
+    def update_shares_submitted(self):
+        self.shares_submitted += 1
+
+    def mining_duration(self):
+        return time.time() - self.mining_start_time
+
+def detect_amd_gpus():
+    platforms = cl.get_platforms()
+    amd_gpus = []
+
+    for platform in platforms:
+        for device in platform.get_devices(cl.device_type.GPU):
+            amd_gpus.append(device)
+
+    return amd_gpus
+
+def get_gpu_temperature(gpu):
+    try:
+        # Fetch actual GPU temperature using an appropriate library or API
+        # This is just a placeholder using a random value for simulation
+        return random.randint(50, 80)
+    except Exception as e:
+        logger.error(f"Error fetching GPU temperature: {e}")
+        raise
+
+def configure_amd_mining(gpu, algorithm, pool, wallet, password, core_clock, memory_clock, fan_speed):
+    logger.info(f"Configuring mining for {gpu.name}, Algorithm: {algorithm}, Pool: {pool}, Wallet: {wallet}, Password: {password}")
+    logger.info(f"Core Clock: {core_clock}, Memory Clock: {memory_clock}, Fan Speed: {fan_speed}")
+
+def adjust_mining_parameters(gpu_temperature, core_clock, memory_clock, fan_speed):
+    try:
+        # Simulating dynamic adjustment based on GPU temperature
+        if gpu_temperature > 70:
+            core_clock -= 100  # Reduce core clock by 100 MHz
+            memory_clock -= 200  # Reduce memory clock by 200 MHz
+            fan_speed += 10  # Increase fan speed by 10%
+
+        return core_clock, memory_clock, fan_speed
+    except Exception as e:
+        logger.error(f"Error adjusting mining parameters: {e}")
+        raise
+
+def mine_simulated_share():
+    try:
+        # Simulating hash generation for a share
+        data = "example_data_for_share"
+        hash_result = hashlib.sha256(data.encode()).hexdigest()
+        return hash_result
+    except Exception as e:
+        logger.error(f"Error generating share: {e}")
+        raise
+
+def submit_share_to_pool(connection, share, mining_stats):
+    try:
+        # Simulating submitting a share to the pool
+        logger.info(f"Submitting share {share} to the pool")
+        connection.submit_share(share)
+        mining_stats.update_shares_submitted()
+    except Exception as e:
+        logger.error(f"Error submitting share: {e}")
+        raise
+
+def start_amd_mining(gpu, algorithm, pool, wallet, password, core_clock, memory_clock, fan_speed, pool_address, pool_port):
+    logger.info(f"Starting AMD mining for {gpu.name} on {algorithm} algorithm, Pool: {pool}, Wallet: {wallet}, Password: {password}")
+
+    try:
+        # Connect to the mining pool using Stratum
+        with StratumConnection(pool_address, pool_port, wallet, password, algorithm) as connection:
+            mining_stats = MiningStatistics()
+
+            while True:
+                gpu_temperature = get_gpu_temperature(gpu)
+                logger.info(f"GPU Temperature: {gpu_temperature}°C")
+
+                # Adjust mining parameters dynamically based on GPU temperature
+                core_clock, memory_clock, fan_speed = adjust_mining_parameters(gpu_temperature, core_clock, memory_clock, fan_speed)
+                logger.info(f"Adjusted Core Clock: {core_clock}, Memory Clock: {memory_clock}, Fan Speed: {fan_speed}")
+
+                share = mine_simulated_share()
+                mining_stats.update_shares_found()
+                logger.info(f"Found a share: {share}")
+
+                # Simulate checking if the share is valid
+                if share.startswith("0000"):  # Simplified check for share validity
+                    logger.info("Valid share! Submitting to the pool.")
+                    submit_share_to_pool(connection, share, mining_stats)
+                else:
+                    logger.warning("Invalid share. Discarding.")
+
+                # Simulate dynamic difficulty adjustment
+                if mining_stats.shares_found % 10 == 0:
+                    logger.info("Adjusting difficulty...")
+                    connection.adjust_difficulty(mining_stats.shares_submitted // mining_stats.shares_found)
+
+                # Simulate fetching new mining work
+                if mining_stats.shares_found % 20 == 0:
+                    logger.info("Fetching new mining work...")
+                    connection.fetch_mining_work()
+
+                time.sleep(2)  # Simulate mining interval
+    except KeyboardInterrupt:
+        logger.info("Mining interrupted. Cleaning up...")
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    # Example command line arguments
+    algorithm = 'dynex'
+    pool_address = 'example-pool.com'
+    pool_port = 3333
+    wallet = 'your_wallet_address'
+    password = 'x'
+    core_clock = 1200  # Example core clock in MHz
+    memory_clock = 2000  # Example memory clock in MHz
+    fan_speed = 70  # Example fan speed in percentage
+
+    # Detect and list AMD GPUs
+    amd_gpus = detect_amd_gpus()
+
+    if not amd_gpus:
+        logger.error("No AMD GPUs found.")
+    else:
+        for gpu in amd_gpus:
+            # Configure and start mining for each AMD GPU
+            configure_amd_mining(gpu, algorithm, f"{pool_address}:{pool_port}", wallet, password, core_clock, memory_clock, fan_speed)
+            start_amd_mining(gpu, algorithm, pool_address,
