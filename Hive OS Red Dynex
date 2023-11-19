@@ -1,0 +1,18 @@
+import json
+
+def save_mining_stats(mining_stats):
+    with open('mining_stats.json', 'w') as stats_file:
+        json.dump(mining_stats.__dict__, stats_file)
+
+def load_mining_stats():
+    try:
+        with open('mining_stats.json', 'r') as stats_file:
+            stats_data = json.load(stats_file)
+            mining_stats = MiningStatistics()
+            mining_stats.__dict__.update(stats_data)
+            return mining_stats
+    except FileNotFoundError:
+        return MiningStatistics()
+
+# In the main loop
+mining_stats = load_mining_stats()
